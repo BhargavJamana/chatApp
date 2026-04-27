@@ -12,7 +12,7 @@ const toNonNegativeInt = (value, fallback = 0) => {
 
 const normalizeMessageType = (type) => {
   const value = String(type || 'text').toLowerCase();
-  const allowed = new Set(['text', 'image', 'file', 'system']);
+  const allowed = new Set(['text', 'image', 'file', 'system', 'voice', 'audio']);
   return allowed.has(value) ? value : 'text';
 };
 

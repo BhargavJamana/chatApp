@@ -68,10 +68,21 @@ exports.getConversations = async (req, res) => {
 exports.sendMessage = async (req, res) => {
   try {
     const receiverId = Number.parseInt(req.body.receiver_id, 10);
-    const content = typeof req.body.content === 'string' ? req.body.content.trim() : '';
-    const messageType = req.body.message_type || 'text';
+    let content = typeof req.body.content === 'string' ? req.body.content.trim() : '';
+    let messageType = req.body.message_type || 'text';
     const clientMessageId =
       typeof req.body.client_message_id === 'string' ? req.body.client_message_id.trim() : null;
+
+    // Handle file upload (multer)
+    if (req.file) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+      content = fileUrl;
+      const mimetype = req.file.mimetype || '';
+      if (mimetype.startsWith('image')) messageType = 'image';
+      else if (mimetype.startsWith('audio')) messageType = 'voice';
+      else messageType = 'file';
+    }
 
     if (!Number.isInteger(receiverId) || receiverId <= 0 || !content) {
       return res.status(400).json({ message: 'Please provide receiver_id and content' });

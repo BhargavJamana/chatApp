@@ -28,6 +28,9 @@ app.use(
   })
 );
 app.use(express.json());
+// static uploads
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -265,6 +268,22 @@ io.on('connection', (socket) => {
       fromUserId,
       at: new Date().toISOString(),
     });
+
+    // persist call log if DB available
+    (async () => {
+      try {
+        const startedAt = data.startedAt || data.started_at ? new Date(data.startedAt || data.started_at) : null;
+        const endedAt = data.endedAt || data.ended_at ? new Date(data.endedAt || data.ended_at) : new Date();
+        const duration = data.duration_seconds || data.duration || (startedAt ? Math.floor((endedAt - startedAt) / 1000) : null);
+        const callType = normalizeCallType(data.callType || data.call_type || 'audio');
+        await pool.execute(
+          'INSERT INTO call_logs (caller_id, callee_id, call_type, status, started_at, ended_at, duration_seconds) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [fromUserId, toUserId, callType, data.status || 'completed', startedAt ? startedAt.toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' '), endedAt ? endedAt.toISOString().slice(0, 19).replace('T', ' ') : null, duration]
+        );
+      } catch (err) {
+        console.warn('Failed to persist call log', err?.message || err);
+      }
+    })();
   });
 
   socket.on('disconnect', () => {
