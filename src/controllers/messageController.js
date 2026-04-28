@@ -67,6 +67,8 @@ exports.getConversations = async (req, res) => {
 // @access  Private
 exports.sendMessage = async (req, res) => {
   try {
+    console.log('POST /messages - body:', Object.keys(req.body), 'file:', req.file ? `${req.file.filename} (${req.file.size}B)` : 'none');
+    
     const receiverId = Number.parseInt(req.body.receiver_id, 10);
     let content = typeof req.body.content === 'string' ? req.body.content.trim() : '';
     let messageType = req.body.message_type || 'text';
@@ -82,10 +84,15 @@ exports.sendMessage = async (req, res) => {
       if (mimetype.startsWith('image')) messageType = 'image';
       else if (mimetype.startsWith('audio')) messageType = 'voice';
       else messageType = 'file';
+      console.log(`File upload: ${messageType} - URL: ${fileUrl}`);
     }
 
-    if (!Number.isInteger(receiverId) || receiverId <= 0 || (!content && !req.file)) {
-      return res.status(400).json({ message: 'Please provide receiver_id and content or file' });
+    if (!Number.isInteger(receiverId) || receiverId <= 0) {
+      return res.status(400).json({ message: `Invalid receiver_id: ${req.body.receiver_id}` });
+    }
+
+    if (!content && !req.file) {
+      return res.status(400).json({ message: 'Please provide content or upload a file' });
     }
 
     const onlineUsers = req.app.get('onlineUsers');
@@ -117,8 +124,17 @@ exports.sendMessage = async (req, res) => {
       message
     });
   } catch (error) {
-    console.error('SendMessage error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('SendMessage error:', error.message);
+    
+    // Handle multer errors
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ message: 'File too large' });
+    }
+    if (error.message && error.message.includes('File type not allowed')) {
+      return res.status(400).json({ message: error.message });
+    }
+    
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 
