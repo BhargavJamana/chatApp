@@ -84,8 +84,8 @@ exports.sendMessage = async (req, res) => {
       else messageType = 'file';
     }
 
-    if (!Number.isInteger(receiverId) || receiverId <= 0 || !content) {
-      return res.status(400).json({ message: 'Please provide receiver_id and content' });
+    if (!Number.isInteger(receiverId) || receiverId <= 0 || (!content && !req.file)) {
+      return res.status(400).json({ message: 'Please provide receiver_id and content or file' });
     }
 
     const onlineUsers = req.app.get('onlineUsers');
