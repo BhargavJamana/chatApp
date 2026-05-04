@@ -38,6 +38,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/pulse', pulseRoutes);
 
+// Backward-compatible aliases for deployments or clients configured without the /api prefix.
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/messages', messageRoutes);
+app.use('/pulse', pulseRoutes);
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
