@@ -39,7 +39,16 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/pulse', pulseRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    capabilities: {
+      pulse: true,
+      invites: true,
+      calls: true,
+      voice_notes: true,
+    },
+  });
 });
 
 // Map<userId, Set<socketId>>
