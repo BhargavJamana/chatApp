@@ -67,22 +67,20 @@ exports.getConversations = async (req, res) => {
 // @access  Private
 exports.sendMessage = async (req, res) => {
   try {
-    const rawReceiverId = req.body.receiver_id;
-    const rawContent = req.body.content;
-    
-    console.log('=== POST /messages ===');
-    console.log('Body keys:', Object.keys(req.body));
-    console.log('receiver_id:', rawReceiverId, typeof rawReceiverId);
-    console.log('content:', rawContent ? '(provided)' : '(empty)');
-    console.log('file:', req.file ? `${req.file.filename} (${req.file.size}B, ${req.file.mimetype})` : 'none');
-    
-    const receiverId = Number.parseInt(rawReceiverId, 10);
-    let content = typeof rawContent === 'string' ? rawContent.trim() : '';
+    // Safely parse receiver_id (handle string from FormData)
+    const receiverId = (() => {
+      const val = req.body.receiver_id;
+      if (!val) return null;
+      const parsed = Number.parseInt(String(val), 10);
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+    })();
+
+    let content = typeof req.body.content === 'string' ? req.body.content.trim() : '';
     let messageType = req.body.message_type || 'text';
     const clientMessageId =
       typeof req.body.client_message_id === 'string' ? req.body.client_message_id.trim() : null;
 
-    // Handle file upload (multer)
+    // Handle file upload (multer) - file has priority
     if (req.file) {
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
@@ -91,22 +89,14 @@ exports.sendMessage = async (req, res) => {
       if (mimetype.startsWith('image')) messageType = 'image';
       else if (mimetype.startsWith('audio')) messageType = 'voice';
       else messageType = 'file';
-      console.log(`✓ File detected: ${messageType}`);
     }
 
-    console.log('Parsed receiverId:', receiverId, 'isInteger:', Number.isInteger(receiverId));
-    
-    if (!Number.isInteger(receiverId) || receiverId <= 0) {
-      console.log('✗ Invalid receiverId - returning 400');
-      return res.status(400).json({ message: `Invalid receiver_id: "${rawReceiverId}" (parsed as ${receiverId})` });
+    if (!receiverId) {
+      return res.status(400).json({ message: 'receiver_id required' });
     }
-
-    if (!content && !req.file) {
-      console.log('✗ No content and no file - returning 400');
-      return res.status(400).json({ message: 'Please provide content or upload a file' });
+    if (!content) {
+      return res.status(400).json({ message: 'content or file required' });
     }
-
-    console.log('✓ Validation passed, creating message...');
 
     const onlineUsers = req.app.get('onlineUsers');
     const emitToUser = req.app.get('emitToUser');

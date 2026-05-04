@@ -60,3 +60,23 @@ exports.searchUsers = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// @desc    Find user by invite/public id
+// @route   GET /api/users/invite/:publicId
+// @access  Private
+exports.getUserByInviteCode = async (req, res) => {
+  try {
+    const user = await User.findByPublicId(req.params.publicId);
+    if (!user || Number(user.id) === Number(req.user.id)) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error('GetUserByInviteCode error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

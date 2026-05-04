@@ -1,3 +1,38 @@
+const ensureUsersTableMigrations = async (pool) => {
+  const [tableRows] = await pool.query("SHOW TABLES LIKE 'users'");
+  if (!tableRows.length) {
+    console.warn("Skipping user migrations: 'users' table not found.");
+    return;
+  }
+
+  const hasColumn = async (columnName) => {
+    const [rows] = await pool.query('SHOW COLUMNS FROM users LIKE ?', [columnName]);
+    return rows.length > 0;
+  };
+
+  const hasIndex = async (indexName) => {
+    const [rows] = await pool.query('SHOW INDEX FROM users WHERE Key_name = ?', [indexName]);
+    return rows.length > 0;
+  };
+
+  if (!(await hasColumn('public_id'))) {
+    await pool.query('ALTER TABLE users ADD COLUMN public_id VARCHAR(24) NULL AFTER avatar');
+  }
+
+  const [usersToBackfill] = await pool.query(
+    'SELECT id FROM users WHERE public_id IS NULL OR public_id = "" ORDER BY id ASC'
+  );
+
+  for (const row of usersToBackfill) {
+    const publicId = `CHAT-${String(row.id).padStart(6, '0')}`;
+    await pool.query('UPDATE users SET public_id = ? WHERE id = ?', [publicId, row.id]);
+  }
+
+  if (!(await hasIndex('idx_users_public_id'))) {
+    await pool.query('CREATE UNIQUE INDEX idx_users_public_id ON users (public_id)');
+  }
+};
+
 const ensureMessagesTableMigrations = async (pool) => {
   const [tableRows] = await pool.query("SHOW TABLES LIKE 'messages'");
   if (!tableRows.length) {
@@ -39,6 +74,7 @@ const ensureMessagesTableMigrations = async (pool) => {
 };
 
 const runMigrations = async (pool) => {
+  await ensureUsersTableMigrations(pool);
   await ensureMessagesTableMigrations(pool);
   // call logs
   await ensureCallLogsMigrations(pool);
@@ -91,4 +127,3 @@ async function ensureCallAttachmentsMigrations(pool) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
   );
 }
-

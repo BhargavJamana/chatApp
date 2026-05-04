@@ -1,7 +1,9 @@
 const { pool } = require('../config/db');
 
 const toPositiveInt = (value, fallback = null) => {
-  const parsed = Number.parseInt(value, 10);
+  if (value === null || value === undefined) return fallback;
+  // Handle string or number
+  const parsed = Number.parseInt(String(value), 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 };
 

@@ -48,7 +48,8 @@ exports.register = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        public_id: user.public_id,
       }
     });
   } catch (error) {
@@ -83,7 +84,8 @@ exports.login = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        public_id: user.public_id,
       }
     });
   } catch (error) {
@@ -105,6 +107,7 @@ exports.getMe = async (req, res) => {
         username: user.username,
         email: user.email,
         avatar: user.avatar,
+        public_id: user.public_id,
         created_at: user.created_at
       }
     });
@@ -131,7 +134,8 @@ exports.updateProfile = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        public_id: user.public_id,
       }
     });
   } catch (error) {
