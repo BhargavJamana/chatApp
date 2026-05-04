@@ -30,11 +30,15 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     // Allow common image/audio uploads plus browser-recorded webm/ogg containers
     const allowed = /^(image|audio)\//;
+    const normalizedMime = String(file.mimetype || '').toLowerCase();
     const allowedMimeTypes = new Set([
       'application/octet-stream',
       'video/webm',
+      'video/webm;codecs=opus',
       'audio/webm',
+      'audio/webm;codecs=opus',
       'audio/ogg',
+      'audio/ogg;codecs=opus',
       'video/ogg',
       'audio/mp4',
       'audio/x-m4a',
@@ -42,7 +46,7 @@ const upload = multer({
       'audio/wav',
       'audio/x-wav',
     ]);
-    if (allowed.test(file.mimetype) || allowedMimeTypes.has(file.mimetype)) {
+    if (allowed.test(normalizedMime) || allowedMimeTypes.has(normalizedMime)) {
       cb(null, true);
     } else {
       cb(new Error(`File type not allowed: ${file.mimetype}`));
