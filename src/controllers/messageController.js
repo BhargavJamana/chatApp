@@ -1,4 +1,5 @@
 const Message = require('../models/Message');
+const { pool } = require('../config/db');
 
 // @desc    Get conversation with user
 // @route   GET /api/messages/:userId
@@ -122,6 +123,26 @@ exports.sendMessage = async (req, res) => {
     }
 
     const message = await Message.getById(messageId);
+
+    if (req.file && messageType !== 'file') {
+      try {
+        await pool.execute(
+          `INSERT INTO call_attachments
+            (message_id, user_id, type, url, mime_type, size_bytes)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            messageId,
+            req.user.id,
+            messageType === 'voice' ? 'voice' : 'image',
+            content,
+            req.file.mimetype || null,
+            req.file.size || null,
+          ]
+        );
+      } catch (attachmentError) {
+        console.warn('Failed to persist call attachment metadata:', attachmentError.message);
+      }
+    }
 
     if (emitToUser && message) {
       emitToUser(req.user.id, 'messageSent', message);
