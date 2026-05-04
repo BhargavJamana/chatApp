@@ -87,7 +87,13 @@ exports.sendMessage = async (req, res) => {
       content = fileUrl;
       const mimetype = req.file.mimetype || '';
       if (mimetype.startsWith('image')) messageType = 'image';
-      else if (mimetype.startsWith('audio')) messageType = 'voice';
+      else if (
+        mimetype.startsWith('audio') ||
+        mimetype === 'video/webm' ||
+        mimetype === 'video/ogg'
+      ) {
+        messageType = 'voice';
+      }
       else messageType = 'file';
     }
 

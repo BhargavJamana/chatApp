@@ -28,9 +28,21 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
-    // Allow images and audio files
+    // Allow common image/audio uploads plus browser-recorded webm/ogg containers
     const allowed = /^(image|audio)\//;
-    if (allowed.test(file.mimetype) || file.mimetype === 'application/octet-stream') {
+    const allowedMimeTypes = new Set([
+      'application/octet-stream',
+      'video/webm',
+      'audio/webm',
+      'audio/ogg',
+      'video/ogg',
+      'audio/mp4',
+      'audio/x-m4a',
+      'audio/mpeg',
+      'audio/wav',
+      'audio/x-wav',
+    ]);
+    if (allowed.test(file.mimetype) || allowedMimeTypes.has(file.mimetype)) {
       cb(null, true);
     } else {
       cb(new Error(`File type not allowed: ${file.mimetype}`));
