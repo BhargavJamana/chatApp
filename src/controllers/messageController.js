@@ -70,7 +70,7 @@ exports.sendMessage = async (req, res) => {
   try {
     // Safely parse receiver_id (handle string from FormData)
     const receiverId = (() => {
-      const val = req.body.receiver_id;
+      const val = req.body.receiver_id ?? req.body.receiverId;
       if (!val) return null;
       const parsed = Number.parseInt(String(val), 10);
       return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
